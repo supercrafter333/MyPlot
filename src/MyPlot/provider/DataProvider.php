@@ -92,6 +92,28 @@ abstract class DataProvider
 	public abstract function getPlotsByOwner(string $owner, string $levelName = "") : array;
 
 	/**
+	 * @param Plot $plotA
+	 * @param Plot $plotB
+	 *
+	 * @return bool
+	 */
+	public abstract function addMergedPlot(Plot $plotA, Plot $plotB) : bool;
+
+	/**
+	 * @param Plot $plot
+	 *
+	 * @return bool
+	 */
+	public abstract function removeMergedPlot(Plot $plot) : bool;
+
+	/**
+	 * @param Plot $plot
+	 *
+	 * @return Plot
+	 */
+	public abstract function getMergedBase(Plot $plot) : Plot;
+
+	/**
 	 * @param string $levelName
 	 * @param int $limitXZ
 	 *
