@@ -284,9 +284,6 @@ class MyPlot extends PluginBase
 		$plotSize = $plotLevel->plotSize;
 		$roadWidth = $plotLevel->roadWidth;
 		$totalSize = $plotSize + $roadWidth;
-		for($i = 0; $i < $plot->merged; $i++) {
-			$totalSize += $plotSize + $roadWidth;
-		}
 		$x = $totalSize * $plot->X;
 		$z = $totalSize * $plot->Z;
 		$level = $this->getServer()->getLevelByName($plot->levelName);
@@ -483,6 +480,16 @@ class MyPlot extends PluginBase
 	public function unMergePlots(Plot $plotA, Plot $plotB) : bool {
 		// TODO: logic needed to decide how plots are connected and how to deal with excluded plots inside
 		return false; // failure
+	}
+
+	/**
+	 * @param Plot $plot
+	 *
+	 * @return bool
+	 */
+	public function isPlotMerged(Plot $plot) : bool {
+		$base = $this->dataProvider->getMergedBase($plot);
+		return $plot !== $base;
 	}
 
 	/**
