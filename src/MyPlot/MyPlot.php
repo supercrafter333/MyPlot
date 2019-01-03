@@ -475,6 +475,17 @@ class MyPlot extends PluginBase
 	}
 
 	/**
+	 * @param Plot $plotA The plot that was expanded
+	 * @param Plot $plotB The consumed plot
+	 *
+	 * @return bool
+	 */
+	public function unMergePlots(Plot $plotA, Plot $plotB) : bool {
+		// TODO: logic needed to decide how plots are connected and how to deal with excluded plots inside
+		return false; // failure
+	}
+
+	/**
 	 * Teleport a player to a plot
 	 *
 	 * @api
