@@ -3,6 +3,7 @@ declare(strict_types=1);
 namespace MyPlot\subcommand;
 
 use pocketmine\command\CommandSender;
+use pocketmine\math\Vector3;
 use pocketmine\Player;
 use pocketmine\utils\TextFormat;
 
@@ -27,37 +28,43 @@ class MergeSubCommand extends SubCommand
 		if(empty($args)) {
 			return false;
 		}
-		$levelName = $args[2] ?? $sender->getLevel()->getFolderName();
-		if(!$this->getPlugin()->isLevelLoaded($levelName)) {
-			$sender->sendMessage(TextFormat::RED . $this->translateString("merge.notinplotworld"));
+		$plot = $this->getPlugin()->getPlotByPosition($sender);
+		if($plot === null) {
+			$sender->sendMessage(TextFormat::RED . $this->translateString("notinplot"));
 			return true;
 		}
-		/** @var string[] $plotIdArray */
-		$plotIdArray = explode(";", $args[0]);
-		if(count($plotIdArray) != 2 or !is_numeric($plotIdArray[0]) or !is_numeric($plotIdArray[1])) {
-			$sender->sendMessage(TextFormat::RED . $this->translateString("merge.wrongid"));
+		if($plot->owner !== $sender->getName() and !$sender->hasPermission("myplot.admin.merge")) {
+			$sender->sendMessage(TextFormat::RED . $this->translateString("notowner"));
 			return true;
 		}
-		$plot = $this->getPlugin()->getProvider()->getPlot($levelName, (int) $plotIdArray[0], (int) $plotIdArray[1]);
-		if($plot->owner == "" and !$sender->hasPermission("myplot.admin.merge")) {
-			$sender->sendMessage(TextFormat::RED . $this->translateString("merge.unclaimed"));
-			return true;
+		switch(strtolower($args[0])) {
+			case "north":
+			case $this->translateString("merge.north"):
+				$direction = Vector3::SIDE_NORTH;
+				$args[0] = $this->translateString("merge.north");
+			break;
+			case "south":
+			case $this->translateString("merge.south"):
+				$direction = Vector3::SIDE_NORTH;
+				$args[0] = $this->translateString("merge.south");
+			break;
+			case "east":
+			case $this->translateString("merge.east"):
+				$direction = Vector3::SIDE_NORTH;
+				$args[0] = $this->translateString("merge.east");
+			break;
+			case "west":
+			case $this->translateString("merge.west"):
+				$direction = Vector3::SIDE_NORTH;
+				$args[0] = $this->translateString("merge.west");
+			break;
+			default:
+				$sender->sendMessage(TextFormat::RED . $this->translateString("merge.direction"));
+				return true;
 		}
-		/** @var string[] $plotIdArray */
-		$plotIdArray = explode(";", $args[1]);
-		if(count($plotIdArray) != 2 or !is_numeric($plotIdArray[0]) or !is_numeric($plotIdArray[1])) {
-			$sender->sendMessage(TextFormat::RED . $this->translateString("merge.wrongid"));
-			return true;
-		}
-		$plot2 = $this->getPlugin()->getProvider()->getPlot($levelName, (int) $plotIdArray[0], (int) $plotIdArray[1]);
-		if($plot2->owner == "" and !$sender->hasPermission("myplot.admin.merge")) {
-			$sender->sendMessage(TextFormat::RED . $this->translateString("merge.unclaimed"));
-			return true;
-		}
-		if($this->getPlugin()->mergePlots($plot, $plot2)) {
+		if($this->getPlugin()->mergePlots($plot, $direction)) {
 			$plot = TextFormat::GREEN . $plot . TextFormat::WHITE;
-			$plot2 = TextFormat::GREEN . $plot2 . TextFormat::WHITE;
-			$sender->sendMessage($this->translateString("merge.success", [$plot2, $plot]));
+			$sender->sendMessage($this->translateString("merge.success", [$plot, $args[0]]));
 		}else{
 			$sender->sendMessage(TextFormat::RED . $this->translateString("error"));
 		}
