@@ -461,25 +461,41 @@ class MyPlot extends PluginBase
 	}
 
 	/**
-	 * @param Plot $plotA The expanding plot
-	 * @param Plot $plotB The plot being consumed
+	 * @param Plot $plot The plot that is to be expanded
+	 * @param int $direction The Vector3 direction value to expand towards
 	 *
 	 * @return bool
 	 */
-	public function mergePlots(Plot $plotA, Plot $plotB) : bool {
-		// TODO: logic needed to decide how plots are connected and how to deal with excluded plots inside
-		return false; // failure
-	}
+	public function mergePlots(Plot $plot, int $direction) : bool {
+		$plotLevel = $this->getLevelSettings($plot->levelName);
+		if($plotLevel === null)
+			return false;
 
-	/**
-	 * @param Plot $plotA The plot that was expanded
-	 * @param Plot $plotB The consumed plot
-	 *
-	 * @return bool
-	 */
-	public function unMergePlots(Plot $plotA, Plot $plotB) : bool {
-		// TODO: logic needed to decide how plots are connected and how to deal with excluded plots inside
-		return false; // failure
+		/** @var Plot[] $toMerge */
+		$toMerge = [];
+		$mergedPlots = $this->getProvider()->getMergedPlots($plot);
+		$pos = $this->getPlotPosition($plot);
+		$nextPlotPos = $pos->getSide($direction, $plotLevel->plotSize);
+		$p = $this->getPlotByPosition($nextPlotPos);
+		if(!in_array($p, $mergedPlots)) {
+			$toMerge[] = $p;
+		}
+		foreach($mergedPlots as $mergedPlot) {
+			$pos = $this->getPlotPosition($mergedPlot);
+			$nextPlotPos = $pos->getSide($direction, $plotLevel->plotSize);
+			$p = $this->getPlotByPosition($nextPlotPos);
+			if(!in_array($p, $mergedPlots)) {
+				$toMerge[] = $p;
+			}
+		}
+		foreach($toMerge as $_) {
+			if($_->owner !== $plot->owner)
+				return false;
+		}
+		/** @var int $maxBlocksPerTick */
+		$maxBlocksPerTick = $this->getConfig()->get("ClearBlocksPerTick", 256);
+		$this->clearRoadsBetween($plot, $this->getFurthestMerge($plot, $toMerge), $maxBlocksPerTick);
+		return $this->getProvider()->mergePlots(...$toMerge);
 	}
 
 	/**
@@ -490,6 +506,40 @@ class MyPlot extends PluginBase
 	public function isPlotMerged(Plot $plot) : bool {
 		$base = $this->dataProvider->getMergedBase($plot);
 		return $plot !== $base;
+	}
+
+	/**
+	 * @param Plot $plot
+	 *
+	 * @param Plot[]|null $list if provided will use these plots instead of database
+	 *
+	 * @return Plot
+	 */
+	public function getFurthestMerge(Plot $plot, ?array $list = null) : Plot {
+		/** @var Plot $furthest */
+		$furthest = null;
+		if(empty($list)) {
+			// TODO: math
+			return $furthest;
+		}
+		// TODO: math
+		return $furthest;
+	}
+
+	/**
+	 * @param Plot $start
+	 * @param Plot $end
+	 *
+	 * @param int $maxBlocksPerTick
+	 *
+	 * @return bool
+	 */
+	public function clearRoadsBetween(Plot $start, Plot $end, int $maxBlocksPerTick = 256) : bool {
+		if(!$this->isLevelLoaded($start->levelName) or $start->levelName !== $end->levelName) {
+			return false;
+		}
+		$this->getScheduler()->scheduleTask(new RoadFillTask($this, $start, $end, $maxBlocksPerTick));
+		return true;
 	}
 
 	/**
