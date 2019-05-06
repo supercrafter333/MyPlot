@@ -258,7 +258,10 @@ class MyPlot extends PluginBase
 			$difZ = abs(($z - $plotSize + 1) % $totalSize);
 		}
 		if(($difX > $plotSize - 1) or ($difZ > $plotSize - 1)) {
-			return null;
+			if() { // TODO: check for merged plots around position
+				//
+			}
+			return null; // this is the road and there are no plots here
 		}
 		return $this->dataProvider->getPlot($levelName, $X, $Z);
 	}
