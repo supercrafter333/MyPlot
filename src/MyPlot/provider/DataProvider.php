@@ -108,10 +108,11 @@ abstract class DataProvider
 
 	/**
 	 * @param Plot $plot
+	 * @param bool $adjacent
 	 *
 	 * @return Plot[]
 	 */
-	public abstract function getMergedPlots(Plot $plot) : array;
+	public abstract function getMergedPlots(Plot $plot, bool $adjacent = false) : array;
 
 	/**
 	 * @param Plot $plot
@@ -119,6 +120,13 @@ abstract class DataProvider
 	 * @return Plot
 	 */
 	public abstract function getMergedBase(Plot $plot) : Plot;
+
+	/**
+	 * @param Plot $plot
+	 *
+	 * @return Plot
+	 */
+	public abstract function getMergedRoot(Plot $plot) : Plot;
 
 	/**
 	 * @param string $levelName
