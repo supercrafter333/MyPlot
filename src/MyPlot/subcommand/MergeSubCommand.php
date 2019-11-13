@@ -45,17 +45,17 @@ class MergeSubCommand extends SubCommand
 			break;
 			case "south":
 			case $this->translateString("merge.south"):
-				$direction = Vector3::SIDE_NORTH;
+				$direction = Vector3::SIDE_SOUTH;
 				$args[0] = $this->translateString("merge.south");
 			break;
 			case "east":
 			case $this->translateString("merge.east"):
-				$direction = Vector3::SIDE_NORTH;
+				$direction = Vector3::SIDE_EAST;
 				$args[0] = $this->translateString("merge.east");
 			break;
 			case "west":
 			case $this->translateString("merge.west"):
-				$direction = Vector3::SIDE_NORTH;
+				$direction = Vector3::SIDE_WEST;
 				$args[0] = $this->translateString("merge.west");
 			break;
 			default:
