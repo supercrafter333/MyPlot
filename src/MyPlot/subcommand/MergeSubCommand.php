@@ -39,21 +39,29 @@ class MergeSubCommand extends SubCommand
 		}
 		switch(strtolower($args[0])) {
 			case "north":
+			case "-z":
+			case "z-":
 			case $this->translateString("merge.north"):
 				$direction = Vector3::SIDE_NORTH;
 				$args[0] = $this->translateString("merge.north");
 			break;
 			case "south":
+			case "+z":
+			case "z+":
 			case $this->translateString("merge.south"):
 				$direction = Vector3::SIDE_SOUTH;
 				$args[0] = $this->translateString("merge.south");
 			break;
 			case "east":
+			case "+x":
+			case "x+":
 			case $this->translateString("merge.east"):
 				$direction = Vector3::SIDE_EAST;
 				$args[0] = $this->translateString("merge.east");
 			break;
 			case "west":
+			case "-x":
+			case "x-":
 			case $this->translateString("merge.west"):
 				$direction = Vector3::SIDE_WEST;
 				$args[0] = $this->translateString("merge.west");
