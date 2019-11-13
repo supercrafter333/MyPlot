@@ -29,38 +29,52 @@ class RoadFillTask extends Task {
 			$this->plots[$key] = $plot;
 		}
 		$this->maxBlocksPerTick = $maxBlocksPerTick;
-		$this->pos = new Vector3($this->plotBeginPos->x, 0, $this->plotBeginPos->z);
 	}
 
 	public function onRun(int $currentTick) {
-		$blocks = 0;
-		while($this->pos->x < $this->xMax) {
-			while($this->pos->z < $this->zMax) {
-				if($this->plugin->getPlotByPosition(Position::fromObject($this->pos, $this->level)) === null) {
-					while($this->pos->y < $this->level->getWorldHeight()) {
-						if($this->pos->y === 0) {
-							$block = $this->bottomBlock;
-						}elseif($this->pos->y < $this->height) {
-							$block = $this->plotFillBlock;
-						}elseif($this->pos->y === $this->height) {
-							$block = $this->plotFloorBlock;
-						}else{
-							$block = Block::get(Block::AIR);
+		foreach($this->roadCounts as $key => $count) {
+			$plot = $this->plots[$key];
+			$plotBeginPos = $this->plugin->getPlotPosition($plot);
+			$level = $plotBeginPos->getLevel();
+			$plotLevel = $this->plugin->getLevelSettings($plot->levelName);
+			$plotSize = $plotLevel->plotSize;
+			$xMax = $plotBeginPos->x + $plotSize;
+			$zMax = $plotBeginPos->z + $plotSize;
+			$height = $plotLevel->groundHeight;
+			$bottomBlock = $plotLevel->bottomBlock;
+			$plotFillBlock = $plotLevel->plotFillBlock;
+			$plotFloorBlock = $plotLevel->plotFloorBlock;
+			$blocks = 0;
+			while($pos->x < $xMax) {
+				while($pos->z < $zMax) {
+					if($this->plugin->getPlotByPosition(Position::fromObject($pos, $level)) === null) {
+						while($pos->y < $level->getWorldHeight()) {
+							if($pos->y === 0) {
+								$block = $bottomBlock;
+							}elseif($pos->y < $height) {
+								$block = $plotFillBlock;
+							}elseif($pos->y === $height) {
+								$block = $plotFloorBlock;
+							}else{
+								$block = Block::get(Block::AIR);
+							}
+							$level->setBlock($pos, $block, false, false);
+							$blocks++;
+							if($blocks >= $this->maxBlocksPerTick) {
+								$this->plugin->getScheduler()->scheduleDelayedTask($this, 1);
+								return;
+							}
+							$pos->y++;
 						}
-						$this->level->setBlock($this->pos, $block, false, false);
-						$blocks++;
-						if($blocks >= $this->maxBlocksPerTick) {
-							$this->plugin->getScheduler()->scheduleDelayedTask($this, 1);
-							return;
-						}
-						$this->pos->y++;
+						$pos->y = 0;
 					}
-					$this->pos->y = 0;
+					$pos->z++;
 				}
-				$this->pos->z++;
+				$pos->z = $plotBeginPos->z;
+				$pos->x++;
 			}
-			$this->pos->z = $this->plotBeginPos->z;
-			$this->pos->x++;
+
+			unset($this->roadCounts[$key]);
 		}
 	}
 }
