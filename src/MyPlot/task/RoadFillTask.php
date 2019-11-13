@@ -12,30 +12,22 @@ use pocketmine\scheduler\Task;
 class RoadFillTask extends Task {
 	/** @var MyPlot $plugin */
 	private $plugin;
-	private $base, $level, $height, $bottomBlock, $plotFillBlock, $plotFloorBlock, $plotBeginPos, $xMax, $zMax, $maxBlocksPerTick, $pos;
+	private $roadCounts, $plots, $level, $height, $bottomBlock, $plotFillBlock, $plotFloorBlock, $plotBeginPos, $xMax, $zMax, $maxBlocksPerTick;
 
 	/**
 	 * PlotMergeTask constructor.
 	 *
 	 * @param MyPlot $plugin
-	 * @param Plot $start
-	 * @param Plot $end
+	 * @param Plot[] $plots
 	 * @param int $maxBlocksPerTick
 	 */
-	public function __construct(MyPlot $plugin, Plot $start, Plot $end, int $maxBlocksPerTick = 256) {
+	public function __construct(MyPlot $plugin, array $plots, int $maxBlocksPerTick = 256) {
 		$this->plugin = $plugin;
-		$this->base = $start;
-		$this->plotBeginPos = $plugin->getPlotPosition($start);
-		$endPos = $plugin->getPlotPosition($end);
-		$this->level = $this->plotBeginPos->getLevel();
-		$plotLevel = $plugin->getLevelSettings($end->levelName);
-		$plotSize = $plotLevel->plotSize;
-		$this->xMax = $endPos->x + $plotSize;
-		$this->zMax = $endPos->z + $plotSize;
-		$this->height = $plotLevel->groundHeight;
-		$this->bottomBlock = $plotLevel->bottomBlock;
-		$this->plotFillBlock = $plotLevel->plotFillBlock;
-		$this->plotFloorBlock = $plotLevel->plotFloorBlock;
+		foreach($plots as $plot) {
+			$key = $plot->__toString().$plot->levelName;
+			$this->roadCounts[$key] = count($plugin->getProvider()->getMergedPlots($plot, true));
+			$this->plots[$key] = $plot;
+		}
 		$this->maxBlocksPerTick = $maxBlocksPerTick;
 		$this->pos = new Vector3($this->plotBeginPos->x, 0, $this->plotBeginPos->z);
 	}
