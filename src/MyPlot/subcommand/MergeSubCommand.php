@@ -25,9 +25,6 @@ class MergeSubCommand extends SubCommand
 	 * @return bool
 	 */
 	public function execute(CommandSender $sender, array $args) : bool {
-		if(empty($args)) {
-			return false;
-		}
 		$plot = $this->getPlugin()->getPlotByPosition($sender);
 		if($plot === null) {
 			$sender->sendMessage(TextFormat::RED . $this->translateString("notinplot"));
@@ -37,38 +34,57 @@ class MergeSubCommand extends SubCommand
 			$sender->sendMessage(TextFormat::RED . $this->translateString("notowner"));
 			return true;
 		}
-		switch(strtolower($args[0])) {
-			case "north":
-			case "-z":
-			case "z-":
-			case $this->translateString("merge.north"):
-				$direction = Vector3::SIDE_NORTH;
-				$args[0] = $this->translateString("merge.north");
-			break;
-			case "south":
-			case "+z":
-			case "z+":
-			case $this->translateString("merge.south"):
-				$direction = Vector3::SIDE_SOUTH;
-				$args[0] = $this->translateString("merge.south");
-			break;
-			case "east":
-			case "+x":
-			case "x+":
-			case $this->translateString("merge.east"):
-				$direction = Vector3::SIDE_EAST;
-				$args[0] = $this->translateString("merge.east");
-			break;
-			case "west":
-			case "-x":
-			case "x-":
-			case $this->translateString("merge.west"):
-				$direction = Vector3::SIDE_WEST;
-				$args[0] = $this->translateString("merge.west");
-			break;
-			default:
-				$sender->sendMessage(TextFormat::RED . $this->translateString("merge.direction"));
+		if(!isset($args[0])) {
+			$rotation = ($sender->getYaw() - 90) % 360;
+			if($rotation < 0) {
+				$rotation += 360.0;
+			}
+			if((0 <= $rotation and $rotation < 45) or (315 <= $rotation and $rotation < 360)) {
+				$direction = Vector3::SIDE_NORTH; //North
+			}elseif(45 <= $rotation and $rotation < 135) {
+				$direction = Vector3::SIDE_EAST; //East
+			}elseif(135 <= $rotation and $rotation < 225) {
+				$direction = Vector3::SIDE_SOUTH; //South
+			}elseif(225 <= $rotation and $rotation < 315) {
+				$direction = Vector3::SIDE_WEST; //West
+			}else{
+				$sender->sendMessage(TextFormat::RED . $this->translateString("error"));
 				return true;
+			}
+		}else{
+			switch(strtolower($args[0])) {
+				case "north":
+				case "-z":
+				case "z-":
+				case $this->translateString("merge.north"):
+					$direction = Vector3::SIDE_NORTH;
+					$args[0] = $this->translateString("merge.north");
+				break;
+				case "south":
+				case "+z":
+				case "z+":
+				case $this->translateString("merge.south"):
+					$direction = Vector3::SIDE_SOUTH;
+					$args[0] = $this->translateString("merge.south");
+				break;
+				case "east":
+				case "+x":
+				case "x+":
+				case $this->translateString("merge.east"):
+					$direction = Vector3::SIDE_EAST;
+					$args[0] = $this->translateString("merge.east");
+				break;
+				case "west":
+				case "-x":
+				case "x-":
+				case $this->translateString("merge.west"):
+					$direction = Vector3::SIDE_WEST;
+					$args[0] = $this->translateString("merge.west");
+				break;
+				default:
+					$sender->sendMessage(TextFormat::RED . $this->translateString("merge.direction"));
+					return true;
+			}
 		}
 		if($this->getPlugin()->mergePlots($plot, $direction)) {
 			$plot = TextFormat::GREEN . $plot . TextFormat::WHITE;
