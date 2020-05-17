@@ -21,6 +21,7 @@ use MyPlot\provider\SQLiteDataProvider;
 use MyPlot\provider\YAMLDataProvider;
 use MyPlot\task\ClearBorderTask;
 use MyPlot\task\ClearPlotTask;
+use MyPlot\task\RoadFillTask;
 use onebone\economyapi\EconomyAPI;
 use pocketmine\block\Block;
 use pocketmine\event\level\LevelLoadEvent;
@@ -450,12 +451,12 @@ class MyPlot extends PluginBase
 	}
 
 	/**
-	 * @param Plot $plotA The plot that was expanded
-	 * @param Plot $plotB The consumed plot
+	 * @param Plot $plot The plot that is to be retracted
+	 * @param int $direction The Vector3 direction value to retract from
 	 *
 	 * @return bool
 	 */
-	public function unMergePlots(Plot $plotA, Plot $plotB) : bool {
+	public function unMergePlots(Plot $plot, int $direction) : bool {
 		// TODO: logic needed to decide how plots are connected and how to deal with excluded plots inside
 		return false; // failure
 	}
@@ -475,7 +476,7 @@ class MyPlot extends PluginBase
 		$toMerge = [];
 		$mergedPlots = $this->getProvider()->getMergedPlots($plot);
 		$pos = $this->getPlotPosition($plot);
-		$nextPlotPos = $pos->getSide($direction, $plotLevel->plotSize);
+		$nextPlotPos = $pos->getSide($direction, $plotLevel->plotSize + $plotLevel->roadWidth);
 		$p = $this->getPlotByPosition($nextPlotPos);
 		if(!in_array($p, $mergedPlots)) {
 			$toMerge[] = $p;
@@ -488,42 +489,22 @@ class MyPlot extends PluginBase
 				$toMerge[] = $p;
 			}
 		}
-		foreach($toMerge as $_) {
-			if($_->owner !== $plot->owner)
+		$pairs = [];
+		foreach($toMerge as $mergeRoot) {
+			if($mergeRoot->owner !== $plot->owner)
 				return false;
+			foreach($toMerge as $__) {
+				for($i = Vector3::SIDE_NORTH; $i <= Vector3::SIDE_EAST; ++$i) {
+					if($__->getSide($i) === $mergeRoot) {
+						$pairs[] = [$mergeRoot, $__];
+					}
+				}
+			}
 		}
 		/** @var int $maxBlocksPerTick */
 		$maxBlocksPerTick = $this->getConfig()->get("ClearBlocksPerTick", 256);
-		$this->clearRoadsBetween($plot, $this->getFurthestMerge($plot, $toMerge), $maxBlocksPerTick);
+		$this->clearRoadsBetween($plot, $end, $maxBlocksPerTick);
 		return $this->getProvider()->mergePlots(...$toMerge);
-	}
-
-	/**
-	 * @param Plot $plot
-	 *
-	 * @return bool
-	 */
-	public function isPlotMerged(Plot $plot) : bool {
-		$base = $this->dataProvider->getMergedBase($plot);
-		return $plot !== $base;
-	}
-
-	/**
-	 * @param Plot $plot
-	 *
-	 * @param Plot[]|null $list if provided will use these plots instead of database
-	 *
-	 * @return Plot
-	 */
-	public function getFurthestMerge(Plot $plot, ?array $list = null) : Plot {
-		/** @var Plot $furthest */
-		$furthest = null;
-		if(empty($list)) {
-			// TODO: math
-			return $furthest;
-		}
-		// TODO: math
-		return $furthest;
 	}
 
 	/**
@@ -538,7 +519,7 @@ class MyPlot extends PluginBase
 		if(!$this->isLevelLoaded($start->levelName) or $start->levelName !== $end->levelName) {
 			return false;
 		}
-		$this->getScheduler()->scheduleTask(new RoadFillTask($this, $start, $end, $maxBlocksPerTick));
+		$this->getScheduler()->scheduleTask(new RoadFillTask($this, [$start, $end], $maxBlocksPerTick));
 		return true;
 	}
 

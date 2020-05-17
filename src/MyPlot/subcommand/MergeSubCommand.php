@@ -15,7 +15,7 @@ class MergeSubCommand extends SubCommand
 	 * @return bool
 	 */
 	public function canUse(CommandSender $sender) : bool {
-		return ($sender instanceof Player) and ($sender->hasPermission("myplot.command.middle"));
+		return ($sender instanceof Player) and ($sender->hasPermission("myplot.command.merge"));
 	}
 
 	/**
