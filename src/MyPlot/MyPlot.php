@@ -489,7 +489,9 @@ class MyPlot extends PluginBase
 		foreach($toMerge as $pair) {
 			$this->getScheduler()->scheduleTask(new RoadFillTask($this, $pair[0], $pair[1], $maxBlocksPerTick));
 		}
-		return $this->getProvider()->mergePlots(...$toMerge);
+		return $this->getProvider()->mergePlots($plot, ...array_map(function($val){
+			return $val[1];
+		}, $toMerge));
 	}
 
 	/**
