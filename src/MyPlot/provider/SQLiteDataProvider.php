@@ -245,7 +245,7 @@ class SQLiteDataProvider extends DataProvider
 	 * @return bool
 	 */
 	public function mergePlots(Plot $base, Plot ...$plots) : bool {
-		return false;
+		return true;
 	}
 
 	/**
