@@ -80,7 +80,6 @@ class RoadFillTask extends Task {
 		}
 
 		$this->height = $plotLevel->groundHeight;
-		//$this->plotWallBlock = $plotLevel->wallBlock; TODO: delete?
 		$this->roadBlock = $plotLevel->plotFloorBlock;
 		$this->groundBlock = $plotLevel->plotFillBlock;
 		$this->bottomBlock = $plotLevel->bottomBlock;
