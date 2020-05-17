@@ -477,8 +477,10 @@ class MyPlot extends PluginBase
 			}
 		}
 		foreach($toMerge as $pair) {
-			if($pair[1]->owner !== $plot->owner)
+			if($pair[1]->owner !== $plot->owner) {
+				$this->getLogger()->debug("Failed to merge due to owner mismatch");
 				return false;
+			}
 		}
 
 		// TODO: WorldStyler clearing
