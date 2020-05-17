@@ -100,13 +100,6 @@ abstract class DataProvider
 	public abstract function mergePlots(Plot $base, Plot ...$plots) : bool;
 
 	/**
-	 * @param Plot[] $plots
-	 *
-	 * @return bool
-	 */
-	public abstract function unMergePlots(Plot ...$plots) : bool;
-
-	/**
 	 * @param Plot $plot
 	 * @param bool $adjacent
 	 *
@@ -119,14 +112,7 @@ abstract class DataProvider
 	 *
 	 * @return Plot
 	 */
-	public abstract function getMergedBase(Plot $plot) : Plot;
-
-	/**
-	 * @param Plot $plot
-	 *
-	 * @return Plot
-	 */
-	public abstract function getMergedRoot(Plot $plot) : Plot;
+	public abstract function getMergeOrigin(Plot $plot) : Plot;
 
 	/**
 	 * @param string $levelName
