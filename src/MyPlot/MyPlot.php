@@ -260,9 +260,7 @@ class MyPlot extends PluginBase
 			$difZ = abs(($z - $plotSize + 1) % $totalSize);
 		}
 		if(($difX > $plotSize - 1) or ($difZ > $plotSize - 1)) {
-			if() { // TODO: check for merged plots around position
-				//
-			}
+			// TODO: check for merged plots around position
 			return null; // this is the road and there are no plots here
 		}
 		return $this->dataProvider->getPlot($levelName, $X, $Z);
@@ -451,17 +449,6 @@ class MyPlot extends PluginBase
 	}
 
 	/**
-	 * @param Plot $plot The plot that is to be retracted
-	 * @param int $direction The Vector3 direction value to retract from
-	 *
-	 * @return bool
-	 */
-	public function unMergePlots(Plot $plot, int $direction) : bool {
-		// TODO: logic needed to decide how plots are connected and how to deal with excluded plots inside
-		return false; // failure
-	}
-
-	/**
 	 * @param Plot $plot The plot that is to be expanded
 	 * @param int $direction The Vector3 direction value to expand towards
 	 *
@@ -472,55 +459,37 @@ class MyPlot extends PluginBase
 		if($plotLevel === null)
 			return false;
 
-		/** @var Plot[] $toMerge */
+		/** @var Plot[][] $toMerge */
 		$toMerge = [];
 		$mergedPlots = $this->getProvider()->getMergedPlots($plot);
 		$pos = $this->getPlotPosition($plot);
 		$nextPlotPos = $pos->getSide($direction, $plotLevel->plotSize + $plotLevel->roadWidth);
 		$p = $this->getPlotByPosition($nextPlotPos);
 		if(!in_array($p, $mergedPlots)) {
-			$toMerge[] = $p;
+			$toMerge[] = [$plot, $p];
 		}
 		foreach($mergedPlots as $mergedPlot) {
 			$pos = $this->getPlotPosition($mergedPlot);
 			$nextPlotPos = $pos->getSide($direction, $plotLevel->plotSize);
 			$p = $this->getPlotByPosition($nextPlotPos);
 			if(!in_array($p, $mergedPlots)) {
-				$toMerge[] = $p;
+				$toMerge[] = [$mergedPlot, $p];
 			}
 		}
-		$pairs = [];
-		foreach($toMerge as $mergeRoot) {
-			if($mergeRoot->owner !== $plot->owner)
+		foreach($toMerge as $pair) {
+			if($pair[1]->owner !== $plot->owner)
 				return false;
-			foreach($toMerge as $__) {
-				for($i = Vector3::SIDE_NORTH; $i <= Vector3::SIDE_EAST; ++$i) {
-					if($__->getSide($i) === $mergeRoot) {
-						$pairs[] = [$mergeRoot, $__];
-					}
-				}
-			}
 		}
+
+		// TODO: WorldStyler clearing
+
 		/** @var int $maxBlocksPerTick */
 		$maxBlocksPerTick = $this->getConfig()->get("ClearBlocksPerTick", 256);
-		$this->clearRoadsBetween($plot, $end, $maxBlocksPerTick);
-		return $this->getProvider()->mergePlots(...$toMerge);
-	}
 
-	/**
-	 * @param Plot $start
-	 * @param Plot $end
-	 *
-	 * @param int $maxBlocksPerTick
-	 *
-	 * @return bool
-	 */
-	public function clearRoadsBetween(Plot $start, Plot $end, int $maxBlocksPerTick = 256) : bool {
-		if(!$this->isLevelLoaded($start->levelName) or $start->levelName !== $end->levelName) {
-			return false;
+		foreach($toMerge as $pair) {
+			$this->getScheduler()->scheduleTask(new RoadFillTask($this, $pair[0], $pair[1], $maxBlocksPerTick));
 		}
-		$this->getScheduler()->scheduleTask(new RoadFillTask($this, [$start, $end], $maxBlocksPerTick));
-		return true;
+		return $this->getProvider()->mergePlots(...$toMerge);
 	}
 
 	/**
