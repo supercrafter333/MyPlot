@@ -41,12 +41,16 @@ class MergeSubCommand extends SubCommand
 			}
 			if((0 <= $rotation and $rotation < 45) or (315 <= $rotation and $rotation < 360)) {
 				$direction = Vector3::SIDE_NORTH; //North
+				$args[0] = $this->translateString("merge.north");
 			}elseif(45 <= $rotation and $rotation < 135) {
 				$direction = Vector3::SIDE_EAST; //East
+				$args[0] = $this->translateString("merge.east");
 			}elseif(135 <= $rotation and $rotation < 225) {
 				$direction = Vector3::SIDE_SOUTH; //South
+				$args[0] = $this->translateString("merge.south");
 			}elseif(225 <= $rotation and $rotation < 315) {
 				$direction = Vector3::SIDE_WEST; //West
+				$args[0] = $this->translateString("merge.west");
 			}else{
 				$sender->sendMessage(TextFormat::RED . $this->translateString("error"));
 				return true;
