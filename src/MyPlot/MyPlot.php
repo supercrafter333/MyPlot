@@ -464,20 +464,40 @@ class MyPlot extends PluginBase
 		$mergedPlots = $this->getProvider()->getMergedPlots($plot);
 		$pos = $this->getPlotPosition($plot);
 		$nextPlotPos = $pos->getSide($direction, $plotLevel->plotSize + $plotLevel->roadWidth);
-		$p = $this->getPlotByPosition($nextPlotPos);
-		if(!in_array($p, $mergedPlots)) {
-			$toMerge[] = [$plot, $p];
+		$newPlot = $this->getPlotByPosition($nextPlotPos);
+		$alreadyMerged = false;
+		foreach($mergedPlots as $mergedPlot) {
+			if($mergedPlot->isSame($newPlot)) {
+				$alreadyMerged = true;
+			}
+		}
+		if(!$alreadyMerged) {
+			$toMerge[] = [$plot, $newPlot];
 		}
 		foreach($mergedPlots as $mergedPlot) {
 			$pos = $this->getPlotPosition($mergedPlot);
-			$nextPlotPos = $pos->getSide($direction, $plotLevel->plotSize);
-			$p = $this->getPlotByPosition($nextPlotPos);
-			if(!in_array($p, $mergedPlots)) {
-				$toMerge[] = [$mergedPlot, $p];
+			$nextPlotPos = $pos->getSide($direction, $plotLevel->plotSize + $plotLevel->roadWidth);
+			$newPlot = $this->getPlotByPosition($nextPlotPos);
+			$alreadyMerged = false;
+			foreach($mergedPlots as $mergedPlot2) {
+				if($mergedPlot2->isSame($newPlot)) {
+					$alreadyMerged = true;
+				}
+			}
+			if(!$alreadyMerged) {
+				$toMerge[] = [$mergedPlot, $newPlot];
 			}
 		}
+		var_dump($plot);
 		foreach($toMerge as $pair) {
-			if($pair[1]->owner !== $plot->owner) {
+			var_dump($pair[1]);
+			if($pair[1]->id === -1){
+				$this->getLogger()->debug("Failed to merge due to invalid Id");
+				return false;
+			}elseif($pair[1]->owner === ""){
+				$this->getLogger()->debug("Failed to merge due to plot not claimed");
+				return false;
+			}elseif($plot->owner !== $pair[1]->owner) {
 				$this->getLogger()->debug("Failed to merge due to owner mismatch");
 				return false;
 			}
@@ -491,7 +511,7 @@ class MyPlot extends PluginBase
 		foreach($toMerge as $pair) {
 			$this->getScheduler()->scheduleTask(new RoadFillTask($this, $pair[0], $pair[1], $maxBlocksPerTick));
 		}
-		return $this->getProvider()->mergePlots($plot, ...array_map(function($val){
+		return $this->getProvider()->mergePlots($plot, ...array_map(function($val) {
 			return $val[1];
 		}, $toMerge));
 	}
