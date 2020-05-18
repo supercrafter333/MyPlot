@@ -462,9 +462,7 @@ class MyPlot extends PluginBase
 		/** @var Plot[][] $toMerge */
 		$toMerge = [];
 		$mergedPlots = $this->getProvider()->getMergedPlots($plot);
-		$pos = $this->getPlotPosition($plot);
-		$nextPlotPos = $pos->getSide($direction, $plotLevel->plotSize + $plotLevel->roadWidth);
-		$newPlot = $this->getPlotByPosition($nextPlotPos);
+		$newPlot = $plot->getSide($direction);
 		$alreadyMerged = false;
 		foreach($mergedPlots as $mergedPlot) {
 			if($mergedPlot->isSame($newPlot)) {
@@ -475,9 +473,7 @@ class MyPlot extends PluginBase
 			$toMerge[] = [$plot, $newPlot];
 		}
 		foreach($mergedPlots as $mergedPlot) {
-			$pos = $this->getPlotPosition($mergedPlot);
-			$nextPlotPos = $pos->getSide($direction, $plotLevel->plotSize + $plotLevel->roadWidth);
-			$newPlot = $this->getPlotByPosition($nextPlotPos);
+			$newPlot = $mergedPlot->getSide($direction);
 			$alreadyMerged = false;
 			foreach($mergedPlots as $mergedPlot2) {
 				if($mergedPlot2->isSame($newPlot)) {
