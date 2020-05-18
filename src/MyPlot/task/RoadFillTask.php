@@ -61,19 +61,23 @@ class RoadFillTask extends Task {
 		$plotSize = $plotLevel->plotSize;
 		$roadWidth = $plotLevel->roadWidth;
 
-		if(($start->X - $end->X) === 1) {
-			$this->plotBeginPos = $this->plotBeginPos->add(0,0,$plotSize);
-			$this->xMax = (int)($this->plotBeginPos->x + $plotSize);
-			$this->zMax = (int)($this->plotBeginPos->z + $roadWidth);
-		}elseif(($start->X - $end->X) === -1) {
+		if(($start->Z - $end->Z) === 1) { // North Z-
+			echo "Z1\n";
 			$this->plotBeginPos = $this->plotBeginPos->subtract(0,0,$roadWidth);
 			$this->xMax = (int)($this->plotBeginPos->x + $plotSize);
 			$this->zMax = (int)($this->plotBeginPos->z + $roadWidth);
-		}elseif(($start->Z - $end->Z) === 1) {
+		}elseif(($start->X - $end->X) === -1) { // East X+
+			echo "X-1\n";
 			$this->plotBeginPos = $this->plotBeginPos->subtract($roadWidth);
 			$this->xMax = (int)($this->plotBeginPos->x + $roadWidth);
 			$this->zMax = (int)($this->plotBeginPos->z + $plotSize);
-		}elseif(($start->Z - $end->Z) === -1) {
+		}elseif(($start->Z - $end->Z) === -1) { // South Z+
+			echo "Z-1\n";
+			$this->plotBeginPos = $this->plotBeginPos->add(0,0,$plotSize);
+			$this->xMax = (int)($this->plotBeginPos->x + $plotSize);
+			$this->zMax = (int)($this->plotBeginPos->z + $roadWidth);
+		}elseif(($start->X - $end->X) === 1) { // West X-
+			echo "X1\n";
 			$this->plotBeginPos = $this->plotBeginPos->add($plotSize);
 			$this->xMax = (int)($this->plotBeginPos->x + $roadWidth);
 			$this->zMax = (int)($this->plotBeginPos->z + $plotSize);
