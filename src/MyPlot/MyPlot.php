@@ -244,7 +244,6 @@ class MyPlot extends PluginBase
 		$plotSize = $plotLevel->plotSize;
 		$roadWidth = $plotLevel->roadWidth;
 		$totalSize = $plotSize + $roadWidth;
-		// TODO: check for merged plots
 		if($x >= 0) {
 			$X = (int) floor($x / $totalSize);
 			$difX = $x % $totalSize;
@@ -260,7 +259,9 @@ class MyPlot extends PluginBase
 			$difZ = abs(($z - $plotSize + 1) % $totalSize);
 		}
 		if(($difX > $plotSize - 1) or ($difZ > $plotSize - 1)) {
-			// TODO: check for merged plots around position
+			$plot = $this->dataProvider->getPlot($levelName, $X, $Z);
+			$merged = $this->getProvider()->getMergedPlots($plot, true);
+			// TODO: if road side is between merge, then return origin
 			return null; // this is the road and there are no plots here
 		}
 		return $this->dataProvider->getPlot($levelName, $X, $Z);
