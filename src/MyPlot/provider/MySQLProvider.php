@@ -29,6 +29,12 @@ class MySQLProvider extends DataProvider {
 	protected $sqlGetPlotsByOwnerAndLevel;
 	/** @var \mysqli_stmt $sqlGetExistingXZ */
 	protected $sqlGetExistingXZ;
+	/** @var \mysqli_stmt $sqlMergePlot */
+	protected $sqlMergePlot;
+	/** @var \mysqli_stmt $sqlGetMergeOrigin */
+	protected $sqlGetMergeOrigin;
+	/** @var \mysqli_stmt $sqlGetMergedPlots */
+	protected $sqlGetMergedPlots;
 
 	/**
 	 * MySQLProvider constructor.
@@ -54,6 +60,7 @@ class MySQLProvider extends DataProvider {
 		}catch(\Exception $e) {
 			// do nothing :P
 		}
+		$this->db->query("CREATE TABLE IF NOT EXISTS mergedPlots (originId INTEGER, mergedId INTEGER UNIQUE, PRIMARY KEY (originId, mergedId), FOREIGN KEY (originId) REFERENCES plots (id) ON DELETE CASCADE , FOREIGN KEY (mergedId) REFERENCES plots (id) ON DELETE CASCADE);");
 		$this->prepare();
 		$this->plugin->getLogger()->debug("MySQL data provider registered");
 	}
@@ -235,6 +242,18 @@ class MySQLProvider extends DataProvider {
 		return null;
 	}
 
+	public function mergePlots(Plot $base, Plot ...$plots) : bool {
+		// TODO: Implement mergePlots() method.
+	}
+
+	public function getMergedPlots(Plot $plot, bool $adjacent = false) : array {
+		// TODO: Implement getMergedPlots() method.
+	}
+
+	public function getMergeOrigin(Plot $plot) : Plot {
+		// TODO: Implement getMergeOrigin() method.
+	}
+
 	public function close() : void {
 		if($this->db->close())
 			$this->plugin->getLogger()->debug("MySQL database closed!");
@@ -280,5 +299,9 @@ class MySQLProvider extends DataProvider {
 		$this->sqlGetPlotsByOwner = $this->db->prepare("SELECT * FROM plots WHERE owner = ?;");
 		$this->sqlGetPlotsByOwnerAndLevel = $this->db->prepare("SELECT * FROM plots WHERE owner = ? AND level = ?;");
 		$this->sqlGetExistingXZ = $this->db->prepare("SELECT X, Z FROM plots WHERE (level = ? AND ((abs(X) = ? AND abs(Z) <= ?) OR (abs(Z) = ? AND abs(X) <= ?)));");
+
+		$this->sqlMergePlot = $this->db->prepare("INSERT INTO mergedPlots (`originId`, `mergedId`) VALUES (?,?) ON DUPLICATE KEY UPDATE originId = VALUES(originId), mergedId = VALUES(mergedId);");
+		$this->sqlGetMergeOrigin = $this->db->prepare("SELECT plots.id, level, X, Z, name, owner, helpers, denied, biome, pvp FROM plots LEFT JOIN mergedPlots ON mergedPlots.originId = plots.id WHERE mergedId = ?;");
+		$this->sqlGetMergedPlots = $this->db->prepare("SELECT plots.id, level, X, Z, name, owner, helpers, denied, biome, pvp FROM plots LEFT JOIN mergedPlots ON mergedPlots.mergedId = plots.id WHERE originId = ?;");
 	}
 }
