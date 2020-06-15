@@ -31,7 +31,7 @@ class SQLiteDataProvider extends DataProvider
 	/** @var \SQLite3Stmt $sqlGetMergeOrigin */
 	protected $sqlGetMergeOrigin;
 	/** @var \SQLite3Stmt $sqlGetMergedPlots */
-	private $sqlGetMergedPlots;
+	protected $sqlGetMergedPlots;
 
 	/**
 	 * SQLiteDataProvider constructor.
