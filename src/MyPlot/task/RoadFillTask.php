@@ -119,5 +119,6 @@ class RoadFillTask extends Task {
 			$this->pos->x++;
 		}
 		$this->plugin->getLogger()->debug("Plot Road Clear task completed at {$this->plot->X};{$this->plot->Z}");
+		$this->plugin->getScheduler()->scheduleTask(new CornerCorrectionTask());
 	}
 }
