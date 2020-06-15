@@ -4,6 +4,7 @@ namespace MyPlot\provider;
 
 use MyPlot\MyPlot;
 use MyPlot\Plot;
+use pocketmine\math\Vector3;
 
 class SQLiteDataProvider extends DataProvider
 {
@@ -291,6 +292,14 @@ class SQLiteDataProvider extends DataProvider
 			$pvp = is_numeric($val["pvp"]) ? (bool)$val["pvp"] : null;
 			$plots[] = new Plot((string) $val["level"], (int) $val["X"], (int) $val["Z"], (string) $val["name"], (string) $val["owner"], $helpers, $denied, (string) $val["biome"], $pvp, (int) $val["id"]);
 		}
+		if($adjacent)
+			$plots = array_filter($plots, function(Plot $val) use ($plot) {
+				for($i = Vector3::SIDE_NORTH; $i <= Vector3::SIDE_EAST; ++$i) {
+					if($plot->getSide($i)->isSame($val))
+						return true;
+				}
+				return false;
+			});
 		return $plots;
 	}
 
