@@ -233,7 +233,7 @@ class MyPlot extends PluginBase
 	 *
 	 * @return Plot|null
 	 */
-	public function getPlotByPosition(Position $position) : ?Plot {
+	public function getPlotByPosition(Position $position, bool $blockRecursion = false) : ?Plot {
 		$x = $position->x;
 		$z = $position->z;
 		$levelName = $position->level->getFolderName();
@@ -259,9 +259,45 @@ class MyPlot extends PluginBase
 			$difZ = abs(($z - $plotSize + 1) % $totalSize);
 		}
 		if(($difX > $plotSize - 1) or ($difZ > $plotSize - 1)) {
+			if($blockRecursion)
+				return $this->dataProvider->getPlot($levelName, $X, $Z);
+
 			$plot = $this->dataProvider->getPlot($levelName, $X, $Z);
-			$merged = $this->getProvider()->getMergedPlots($plot, true);
-			// TODO: if road side is between merge, then return origin
+
+			$coordinateOffset = ($totalSize/2) * sin(M_PI_4);
+			$pos = Position::fromObject($position->add($coordinateOffset, 0, $coordinateOffset), $position->getLevelNonNull());
+			$possibleMergedPlot = $this->getPlotByPosition($pos, true);
+			if($plot instanceof Plot) {
+				$originPlot = $this->dataProvider->getMergeOrigin($possibleMergedPlot);
+				if($originPlot->isSame($plot))
+					return $originPlot;
+			}
+
+			$pos = Position::fromObject($position->add(-$coordinateOffset, 0, $coordinateOffset), $position->getLevelNonNull());
+			$possibleMergedPlot = $this->getPlotByPosition($pos, true);
+			if($plot instanceof Plot) {
+				$originPlot = $this->dataProvider->getMergeOrigin($possibleMergedPlot);
+				if($originPlot->isSame($plot))
+					return $originPlot;
+			}
+
+			$pos = Position::fromObject($position->add($coordinateOffset, 0, -$coordinateOffset), $position->getLevelNonNull());
+			$possibleMergedPlot = $this->getPlotByPosition($pos, true);
+			if($plot instanceof Plot) {
+				$originPlot = $this->dataProvider->getMergeOrigin($possibleMergedPlot);
+				if($originPlot->isSame($plot))
+					return $originPlot;
+			}
+
+			$pos = Position::fromObject($position->add(-$coordinateOffset, 0, -$coordinateOffset), $position->getLevelNonNull());
+			$possibleMergedPlot = $this->getPlotByPosition($pos, true);
+			if($plot instanceof Plot) {
+				$originPlot = $this->dataProvider->getMergeOrigin($possibleMergedPlot);
+				if($originPlot->isSame($plot))
+					return $originPlot;
+			}
+
+			// TODO: use better logic than diagonal tracking
 			return null; // this is the road and there are no plots here
 		}
 		return $this->dataProvider->getPlot($levelName, $X, $Z);
