@@ -279,12 +279,12 @@ class MyPlot extends PluginBase
 		$plotLevel = $this->getLevelSettings($plot->levelName);
 		if($plotLevel === null)
 			return null;
-		// TODO: check for merged plots
+		$origin = $this->dataProvider->getMergeOrigin($plot);
 		$plotSize = $plotLevel->plotSize;
 		$roadWidth = $plotLevel->roadWidth;
 		$totalSize = $plotSize + $roadWidth;
-		$x = $totalSize * $plot->X;
-		$z = $totalSize * $plot->Z;
+		$x = $totalSize * $origin->X;
+		$z = $totalSize * $origin->Z;
 		$level = $this->getServer()->getLevelByName($plot->levelName);
 		return new Position($x, $plotLevel->groundHeight, $z, $level);
 	}
