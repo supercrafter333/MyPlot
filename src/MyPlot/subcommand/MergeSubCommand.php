@@ -35,6 +35,10 @@ class MergeSubCommand extends SubCommand
 			return true;
 		}
 		if(!isset($args[0])) {
+			$plotId = TextFormat::GREEN . $plot . TextFormat::WHITE;
+			$sender->sendMessage($this->translateString("merge.confirmface", [$plotId]));
+			return true;
+		}elseif($args[0] === $this->translateString("confirm")) {
 			$rotation = ($sender->getYaw() - 90) % 360;
 			if($rotation < 0) {
 				$rotation += 360.0;
@@ -88,6 +92,11 @@ class MergeSubCommand extends SubCommand
 				default:
 					$sender->sendMessage(TextFormat::RED . $this->translateString("merge.direction"));
 					return true;
+			}
+			if(!isset($args[1]) or $args[1] !== $this->translateString("confirm")) {
+				$plotId = TextFormat::GREEN . $plot . TextFormat::WHITE;
+				$sender->sendMessage($this->translateString("merge.confirmarg", [$plotId, $args[0], implode(' ', $args)." ".$this->translateString("confirm")]));
+				return true;
 			}
 		}
 		if($this->getPlugin()->mergePlots($plot, $direction)) {
