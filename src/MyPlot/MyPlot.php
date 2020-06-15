@@ -230,6 +230,7 @@ class MyPlot extends PluginBase
 	 * @api
 	 *
 	 * @param Position $position
+	 * @param bool $blockRecursion Causes the function to always return null on roads
 	 *
 	 * @return Plot|null
 	 */
@@ -260,7 +261,7 @@ class MyPlot extends PluginBase
 		}
 		if(($difX > $plotSize - 1) or ($difZ > $plotSize - 1)) {
 			if($blockRecursion)
-				return $this->dataProvider->getPlot($levelName, $X, $Z);
+				return null;
 
 			$plot = $this->dataProvider->getPlot($levelName, $X, $Z);
 
