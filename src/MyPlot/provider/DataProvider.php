@@ -29,7 +29,7 @@ abstract class DataProvider
 	 * @param Plot $plot
 	 */
 	protected final function cachePlot(Plot $plot) : void {
-		if($this->cacheSize > 0) {
+		if($this->cacheSize > 0 and $plot->id !== -1) {
 			$key = $plot->levelName . ';' . $plot->X . ';' . $plot->Z;
 			if(isset($this->cache[$key])) {
 				unset($this->cache[$key]);
@@ -52,7 +52,7 @@ abstract class DataProvider
 	protected final function getPlotFromCache(string $levelName, int $X, int $Z) : ?Plot {
 		if($this->cacheSize > 0) {
 			$key = $levelName . ';' . $X . ';' . $Z;
-			if(isset($this->cache[$key])) {
+			if(isset($this->cache[$key]) and $this->cache[$key]->id !== -1) {
 				#$this->plugin->getLogger()->debug("Plot {$X};{$Z} was loaded from the cache");
 				return $this->cache[$key];
 			}
