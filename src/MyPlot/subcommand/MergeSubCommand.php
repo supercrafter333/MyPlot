@@ -2,6 +2,7 @@
 declare(strict_types=1);
 namespace MyPlot\subcommand;
 
+use MyPlot\forms\MyPlotForm;
 use pocketmine\command\CommandSender;
 use pocketmine\math\Vector3;
 use pocketmine\Player;
@@ -39,7 +40,7 @@ class MergeSubCommand extends SubCommand
 			$sender->sendMessage($this->translateString("merge.confirmface", [$plotId]));
 			return true;
 		}elseif($args[0] === $this->translateString("confirm")) {
-			$rotation = ($sender->getYaw() - 90) % 360;
+			$rotation = ($sender->getYaw() - 180) % 360;
 			if($rotation < 0) {
 				$rotation += 360.0;
 			}
@@ -99,7 +100,8 @@ class MergeSubCommand extends SubCommand
 				return true;
 			}
 		}
-		if($this->getPlugin()->mergePlots($plot, $direction)) {
+		$maxBlocksPerTick = (int) $this->getPlugin()->getConfig()->get("ClearBlocksPerTick", 256);
+		if($this->getPlugin()->mergePlots($plot, $direction, $maxBlocksPerTick)) {
 			$plot = TextFormat::GREEN . $plot . TextFormat::WHITE;
 			$sender->sendMessage($this->translateString("merge.success", [$plot, $args[0]]));
 			return true;
@@ -108,4 +110,8 @@ class MergeSubCommand extends SubCommand
 			return true;
 		}
 	}
+
+    public function getForm(?Player $player = null) : ?MyPlotForm {
+        return null;
+    }
 }

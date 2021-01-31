@@ -2,6 +2,9 @@
 declare(strict_types=1);
 namespace MyPlot\subcommand;
 
+use MyPlot\forms\MyPlotForm;
+use MyPlot\forms\subforms\ClaimForm;
+use MyPlot\MyPlot;
 use pocketmine\command\CommandSender;
 use pocketmine\Player;
 use pocketmine\utils\TextFormat;
@@ -53,17 +56,23 @@ class ClaimSubCommand extends SubCommand
 			$sender->sendMessage(TextFormat::RED . $this->translateString("claim.maxplots", [$maxPlots]));
 			return true;
 		}
-		$plotLevel = $this->getPlugin()->getLevelSettings($plot->levelName);
 		$economy = $this->getPlugin()->getEconomyProvider();
-		if($economy !== null and !$economy->reduceMoney($sender, $plotLevel->claimPrice)) {
+		if($economy !== null and !$economy->reduceMoney($sender, $plot->price)) {
 			$sender->sendMessage(TextFormat::RED . $this->translateString("claim.nomoney"));
 			return true;
 		}
-		if($this->getPlugin()->claimPlot($plot, $sender->getName(), $name)) {
-			$sender->sendMessage($this->translateString("claim.success"));
-		}else{
+		if($plot->isMerge()){
+            $sender->sendMessage($this->translateString("claim.mergeInProgress"));
+        }
+		if(!$this->getPlugin()->claimPlot($plot, $sender->getName(), $name)) {
 			$sender->sendMessage(TextFormat::RED . $this->translateString("error"));
 		}
 		return true;
+	}
+
+	public function getForm(?Player $player = null) : ?MyPlotForm {
+		if(MyPlot::getInstance()->isLevelLoaded($player->getLevel()->getFolderName()))
+			return new ClaimForm($player);
+		return null;
 	}
 }

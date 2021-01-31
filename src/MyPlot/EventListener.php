@@ -7,6 +7,7 @@ use MyPlot\events\MyPlotBorderChangeEvent;
 use MyPlot\events\MyPlotPlayerEnterPlotEvent;
 use MyPlot\events\MyPlotPlayerLeavePlotEvent;
 use MyPlot\events\MyPlotPvpEvent;
+use pocketmine\block\Liquid;
 use pocketmine\block\Sapling;
 use pocketmine\event\block\BlockBreakEvent;
 use pocketmine\event\block\BlockPlaceEvent;
@@ -15,12 +16,12 @@ use pocketmine\event\block\SignChangeEvent;
 use pocketmine\event\entity\EntityDamageByEntityEvent;
 use pocketmine\event\entity\EntityExplodeEvent;
 use pocketmine\event\entity\EntityMotionEvent;
+use pocketmine\event\entity\EntityTeleportEvent;
 use pocketmine\event\level\LevelLoadEvent;
 use pocketmine\event\level\LevelUnloadEvent;
 use pocketmine\event\Listener;
 use pocketmine\event\player\PlayerInteractEvent;
 use pocketmine\event\player\PlayerMoveEvent;
-use pocketmine\item\Food;
 use pocketmine\level\Level;
 use pocketmine\Player;
 use pocketmine\utils\Config;
@@ -112,7 +113,7 @@ class EventListener implements Listener
 	 * @param PlayerInteractEvent $event
 	 */
 	public function onPlayerInteract(PlayerInteractEvent $event) : void {
-		if($event->getAction() === PlayerInteractEvent::RIGHT_CLICK_AIR and $event->getItem() instanceof Food)
+		if($event->getAction() === PlayerInteractEvent::RIGHT_CLICK_AIR)
 			return;
 		$this->onEventOnBlock($event);
 	}
@@ -256,9 +257,27 @@ class EventListener implements Listener
 		if(!$this->plugin->isLevelLoaded($levelName))
 			return;
 		$settings = $this->plugin->getLevelSettings($levelName);
-		if(!$settings->updatePlotLiquids and ($this->plugin->getPlotByPosition($event->getBlock()) instanceof Plot or $this->plugin->getPlotByPosition($event->getSource()) instanceof Plot or $this->plugin->isPositionBorderingPlot($event->getBlock()) or $this->plugin->isPositionBorderingPlot($event->getSource()))) {
+
+		$newBlockInPlot = $this->plugin->getPlotByPosition($event->getBlock()) instanceof Plot;
+		$sourceBlockInPlot = $this->plugin->getPlotByPosition($event->getSource()) instanceof Plot;
+
+		if($newBlockInPlot and $sourceBlockInPlot) {
+			$spreadIsSamePlot = $this->plugin->getPlotByPosition($event->getBlock())->isSame($this->plugin->getPlotByPosition($event->getSource()));
+		}else {
+			$spreadIsSamePlot = false;
+		}
+
+		if($event->getSource() instanceof Liquid) {
+			if(!$settings->updatePlotLiquids and ($sourceBlockInPlot or $this->plugin->isPositionBorderingPlot($event->getSource()))) {
+				$event->setCancelled();
+				$this->plugin->getLogger()->debug("Cancelled {$event->getSource()->getName()} spread on [$levelName]");
+			}elseif($settings->updatePlotLiquids and ($sourceBlockInPlot or $this->plugin->isPositionBorderingPlot($event->getSource())) and (!$newBlockInPlot or !$this->plugin->isPositionBorderingPlot($event->getBlock()) or !$spreadIsSamePlot)) {
+				$event->setCancelled();
+				$this->plugin->getLogger()->debug("Cancelled {$event->getSource()->getName()} spread on [$levelName]");
+			}
+		}elseif(!$settings->allowOutsidePlotSpread and (!$newBlockInPlot or !$spreadIsSamePlot)) {
 			$event->setCancelled();
-			$this->plugin->getLogger()->debug("Cancelled block spread of {$event->getBlock()->getName()} on " . $levelName);
+			//$this->plugin->getLogger()->debug("Cancelled block spread of {$event->getSource()->getName()} on ".$levelName);
 		}
 	}
 
@@ -269,8 +288,28 @@ class EventListener implements Listener
 	 * @param PlayerMoveEvent $event
 	 */
 	public function onPlayerMove(PlayerMoveEvent $event) : void {
-		$levelName = $event->getPlayer()->getLevel()->getFolderName();
-		if(!$this->plugin->isLevelLoaded($levelName))
+		$this->onEventOnMove($event->getPlayer(), $event);
+	}
+
+	/**
+	 * @ignoreCancelled false
+	 * @priority LOWEST
+	 *
+	 * @param EntityTeleportEvent $event
+	 */
+	public function onPlayerTeleport(EntityTeleportEvent $event) : void {
+		$entity = $event->getEntity();
+		if ($entity instanceof Player) {
+			$this->onEventOnMove($entity, $event);
+		}
+	}
+
+	/**
+	 * @param PlayerMoveEvent|EntityTeleportEvent $event
+	 */
+	private function onEventOnMove(Player $player, $event) : void {
+		$levelName = $player->getLevel()->getFolderName();
+		if (!$this->plugin->isLevelLoaded($levelName))
 			return;
 		$plot = $this->plugin->getPlotByPosition($event->getTo());
 		$plotFrom = $this->plugin->getPlotByPosition($event->getFrom());
@@ -278,10 +317,10 @@ class EventListener implements Listener
 			if(strpos((string) $plot, "-0")) {
 				return;
 			}
-			$ev = new MyPlotPlayerEnterPlotEvent($plot, $event->getPlayer());
+			$ev = new MyPlotPlayerEnterPlotEvent($plot, $player);
 			$ev->setCancelled($event->isCancelled());
-			$username = $event->getPlayer()->getName();
-			if($plot->owner !== $username and ($plot->isDenied($username) or $plot->isDenied("*")) and !$event->getPlayer()->hasPermission("myplot.admin.denyplayer.bypass")) {
+			$username = $ev->getPlayer()->getName();
+			if($plot->owner !== $username and ($plot->isDenied($username) or $plot->isDenied("*")) and !$ev->getPlayer()->hasPermission("myplot.admin.denyplayer.bypass")) {
 				$ev->setCancelled();
 			}
 			$ev->call();
@@ -292,27 +331,32 @@ class EventListener implements Listener
 			if(!$this->plugin->getConfig()->get("ShowPlotPopup", true))
 				return;
 			$popup = $this->plugin->getLanguage()->translateString("popup", [TextFormat::GREEN . $plot]);
+			$price = TextFormat::GREEN . $plot->price;
 			if(!empty($plot->owner)) {
 				$owner = TextFormat::GREEN . $plot->owner;
-				$ownerPopup = $this->plugin->getLanguage()->translateString("popup.owner", [$owner]);
+				if($plot->price > 0 and $plot->owner !== $player->getName()) {
+					$ownerPopup = $this->plugin->getLanguage()->translateString("popup.forsale", [$owner.TextFormat::WHITE, $price.TextFormat::WHITE]);
+				}else{
+					$ownerPopup = $this->plugin->getLanguage()->translateString("popup.owner", [$owner.TextFormat::WHITE]);
+				}
 			}else{
-				$ownerPopup = $this->plugin->getLanguage()->translateString("popup.available");
+				$ownerPopup = $this->plugin->getLanguage()->translateString("popup.available", [$price.TextFormat::WHITE]);
 			}
 			$paddingSize = (int) floor((strlen($popup) - strlen($ownerPopup)) / 2);
 			$paddingPopup = str_repeat(" ", max(0, -$paddingSize));
 			$paddingOwnerPopup = str_repeat(" ", max(0, $paddingSize));
 			$popup = TextFormat::WHITE . $paddingPopup . $popup . "\n" . TextFormat::WHITE . $paddingOwnerPopup . $ownerPopup;
-			$event->getPlayer()->sendTip($popup);
+			$ev->getPlayer()->sendTip($popup);
 		}elseif($plotFrom !== null and ($plot === null or !$plot->isSame($plotFrom))) {
 			if(strpos((string) $plotFrom, "-0")) {
 				return;
 			}
-			$ev = new MyPlotPlayerLeavePlotEvent($plotFrom, $event->getPlayer());
+			$ev = new MyPlotPlayerLeavePlotEvent($plotFrom, $player);
 			$ev->setCancelled($event->isCancelled());
 			$ev->call();
 			$event->setCancelled($ev->isCancelled());
-		}elseif($plotFrom !== null and $plot !== null and ($plot->isDenied($event->getPlayer()->getName()) or $plot->isDenied("*")) and $plot->owner !== $event->getPlayer()->getName() and !$event->getPlayer()->hasPermission("myplot.admin.denyplayer.bypass")) {
-			$this->plugin->teleportPlayerToPlot($event->getPlayer(), $plot, false); // TODO: is this in the plot?
+		}elseif($plotFrom !== null and $plot !== null and ($plot->isDenied($player->getName()) or $plot->isDenied("*")) and $plot->owner !== $player->getName() and !$player->hasPermission("myplot.admin.denyplayer.bypass")) {
+			$this->plugin->teleportPlayerToPlot($player, $plot, false);
 		}
 	}
 

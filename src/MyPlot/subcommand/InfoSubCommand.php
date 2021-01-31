@@ -2,6 +2,8 @@
 declare(strict_types=1);
 namespace MyPlot\subcommand;
 
+use MyPlot\forms\MyPlotForm;
+use MyPlot\forms\subforms\InfoForm;
 use MyPlot\Plot;
 use pocketmine\command\CommandSender;
 use pocketmine\Player;
@@ -35,6 +37,8 @@ class InfoSubCommand extends SubCommand
 				}
 				if(isset($plots[$key])) {
 					$plot = $plots[$key];
+                    $merge = count($this->getPlugin()->getProvider()->getMergedPlots($plot));
+					if($merge == 1) $merge = $this->translateString("info.merge.nomerge");
 					$sender->sendMessage($this->translateString("info.about", [TextFormat::GREEN . $plot]));
 					$sender->sendMessage($this->translateString("info.owner", [TextFormat::GREEN . $plot->owner]));
 					$sender->sendMessage($this->translateString("info.plotname", [TextFormat::GREEN . $plot->name]));
@@ -43,6 +47,7 @@ class InfoSubCommand extends SubCommand
 					$denied = implode(", ", $plot->denied);
 					$sender->sendMessage($this->translateString("info.denied", [TextFormat::GREEN . $denied]));
 					$sender->sendMessage($this->translateString("info.biome", [TextFormat::GREEN . $plot->biome]));
+					$sender->sendMessage($this->translateString("info.merge", [TextFormat::GREEN . $merge]));
 				}else{
 					$sender->sendMessage(TextFormat::RED . $this->translateString("info.notfound"));
 				}
@@ -55,6 +60,8 @@ class InfoSubCommand extends SubCommand
 				$sender->sendMessage(TextFormat::RED . $this->translateString("notinplot"));
 				return true;
 			}
+            $merge = count($this->getPlugin()->getProvider()->getMergedPlots($plot));
+            if($merge == 1) $merge = $this->translateString("info.merge.nomerge");
 			$sender->sendMessage($this->translateString("info.about", [TextFormat::GREEN . $plot]));
 			$sender->sendMessage($this->translateString("info.owner", [TextFormat::GREEN . $plot->owner]));
 			$sender->sendMessage($this->translateString("info.plotname", [TextFormat::GREEN . $plot->name]));
@@ -63,7 +70,14 @@ class InfoSubCommand extends SubCommand
 			$denied = implode(", ", $plot->denied);
 			$sender->sendMessage($this->translateString("info.denied", [TextFormat::GREEN . $denied]));
 			$sender->sendMessage($this->translateString("info.biome", [TextFormat::GREEN . $plot->biome]));
+            $sender->sendMessage($this->translateString("info.merge", [TextFormat::GREEN . $merge]));
 		}
 		return true;
+	}
+
+	public function getForm(?Player $player = null) : ?MyPlotForm {
+		if($this->getPlugin()->getPlotByPosition($player) instanceof Plot)
+			return new InfoForm($player);
+		return null;
 	}
 }

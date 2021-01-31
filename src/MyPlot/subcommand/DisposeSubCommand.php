@@ -2,6 +2,7 @@
 declare(strict_types=1);
 namespace MyPlot\subcommand;
 
+use MyPlot\forms\MyPlotForm;
 use pocketmine\command\CommandSender;
 use pocketmine\Player;
 use pocketmine\utils\TextFormat;
@@ -40,9 +41,12 @@ class DisposeSubCommand extends SubCommand
 				$sender->sendMessage(TextFormat::RED . $this->translateString("dispose.nomoney"));
 				return true;
 			}
+            if($plot->isMerge()){
+                $sender->sendMessage($this->translateString("dispose.mergeInProgress"));
+            }
 			if($this->getPlugin()->disposePlot($plot)) {
-				$sender->sendMessage($this->translateString("dispose.success"));
-			}else{
+                $sender->sendMessage($this->translateString("dispose.success"));
+            }else{
 				$sender->sendMessage(TextFormat::RED . $this->translateString("error"));
 			}
 		}else{
@@ -50,5 +54,9 @@ class DisposeSubCommand extends SubCommand
 			$sender->sendMessage($this->translateString("dispose.confirm", [$plotId]));
 		}
 		return true;
+	}
+
+	public function getForm(?Player $player = null) : ?MyPlotForm {
+		return null;
 	}
 }

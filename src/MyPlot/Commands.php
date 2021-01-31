@@ -3,9 +3,11 @@ declare(strict_types=1);
 namespace MyPlot;
 
 use jasonwynn10\EasyCommandAutofill\Main;
+use MyPlot\forms\MainForm;
 use MyPlot\subcommand\AddHelperSubCommand;
 use MyPlot\subcommand\AutoSubCommand;
 use MyPlot\subcommand\BiomeSubCommand;
+use MyPlot\subcommand\BuySubCommand;
 use MyPlot\subcommand\ClaimSubCommand;
 use MyPlot\subcommand\ClearSubCommand;
 use MyPlot\subcommand\CloneSubCommand;
@@ -25,6 +27,7 @@ use MyPlot\subcommand\NameSubCommand;
 use MyPlot\subcommand\PvpSubCommand;
 use MyPlot\subcommand\RemoveHelperSubCommand;
 use MyPlot\subcommand\ResetSubCommand;
+use MyPlot\subcommand\SellSubCommand;
 use MyPlot\subcommand\SetOwnerSubCommand;
 use MyPlot\subcommand\SubCommand;
 use MyPlot\subcommand\UnDenySubCommand;
@@ -35,6 +38,7 @@ use pocketmine\network\mcpe\protocol\AvailableCommandsPacket;
 use pocketmine\network\mcpe\protocol\types\CommandData;
 use pocketmine\network\mcpe\protocol\types\CommandEnum;
 use pocketmine\network\mcpe\protocol\types\CommandParameter;
+use pocketmine\Player;
 use pocketmine\utils\TextFormat;
 
 class Commands extends PluginCommand
@@ -79,6 +83,10 @@ class Commands extends PluginCommand
 		$this->loadSubCommand(new PvpSubCommand($plugin, "pvp"));
 		$this->loadSubCommand(new KickSubCommand($plugin, "kick"));
 		$this->loadSubCommand(new MergeSubCommand($plugin, "merge"));
+		if($plugin->getEconomyProvider() !== null) {
+			$this->loadSubCommand(new SellSubCommand($plugin, "sell"));
+			$this->loadSubCommand(new BuySubCommand($plugin, "buy"));
+		}
 		$styler = $this->getPlugin()->getServer()->getPluginManager()->getPlugin("WorldStyler");
 		if($styler !== null) {
 			$this->loadSubCommand(new CloneSubCommand($plugin, "clone"));
@@ -220,6 +228,10 @@ class Commands extends PluginCommand
 		}
 		if(!isset($args[0])) {
 			$args[0] = "help";
+			if($sender instanceof Player and $plugin->getConfig()->get("UI Forms", true)) {
+				$sender->sendForm(new MainForm($sender, $this->subCommands));
+				return true;
+			}
 		}
 		$subCommand = strtolower(array_shift($args));
 		if(isset($this->subCommands[$subCommand])) {
